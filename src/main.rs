@@ -1,7 +1,7 @@
 
 use std::process;
 
-use blackjack::{BlackJack,Player};
+use blackjack::{game::BlackJack, player::Player};
 
 /*
 TODO:
