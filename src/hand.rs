@@ -1,9 +1,10 @@
-use std::fmt::{self, Display};
+use std::fmt::Display;
 
 use crate::{card::Card, game::Action};
 
 
 // TODO: make fields private, use ::new to create and init hands
+// reduce number of pub struct -> pub field
 #[derive(Debug)]
 pub struct Hand {
     pub cards: Vec<Card>,
