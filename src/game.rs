@@ -74,11 +74,11 @@ impl BlackJack {
         println!("Taking action {action:?}");
         match action {
             Action::Hit => {
-                let next_action = {
-                    let curr_hand = &mut self.player_hands[self.current_hand_index];
-                    self.deck.hit(curr_hand);
-                    curr_hand.get_action()
-                };
+                let curr_hand = &mut self.player_hands[self.current_hand_index];
+                self.deck.hit(curr_hand);
+                let next_action = curr_hand.get_action();
+            
+                // blackjack test
                
                 // bust or 21, move to next hand
                 self.take_player_action(next_action);
@@ -109,12 +109,8 @@ impl BlackJack {
                 }
             },
             Action::Double => {
-                // double bet (check bet_amount and balance) => stand
-                // not available if split (not always true)
-     
                 match self.player.withdraw_balance(self.bet_amount) {
                     Ok(_) => {
-                        // only 1 card
                         let curr_hand = &mut self.player_hands[self.current_hand_index];
                         
                         if curr_hand.cards.len() != 2 {
@@ -124,20 +120,20 @@ impl BlackJack {
                         
                         // needs to modify hand value
                         curr_hand.bet_value = curr_hand.bet_value * 2;
-
-                        
                         self.deck.hit(curr_hand);
 
-                        // TODO: COULD BUST - GET ACTIOn - start here
-                        
-                        self.take_player_action(Action::Stand);
+                        let next_action = match curr_hand.get_action() {
+                            Action::Bust => Action::Bust,
+                            _ => Action::Stand
+                        };
+
+                        self.take_player_action(next_action);
                     },
                     Err(err) => {
                         println!("Could not withdraw balance {err}");
                         return;
                     }
                 }
-                // hit one more time on deck, no more hits allowed
             },
             Action::Stand | Action::Bust => {
                 if let Action::Bust = action {

@@ -73,6 +73,7 @@ impl Player {
         if amount > self.balance {
             Err("Not enough money")
         } else {
+            self.balance -= amount;
             Ok(amount)
         }
     }
