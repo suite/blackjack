@@ -56,7 +56,13 @@ impl Rank {
 #[derive(Debug)]
 pub struct Card {
     pub rank: Rank,
-    pub suite: Suite,
+    suite: Suite,
+}
+
+impl Card {
+    pub fn to_string(&self) -> String {
+        format!("{:?} of {:?},", self.rank, self.suite) // TODO: need better format
+    }
 }
 
 pub mod card_utils {

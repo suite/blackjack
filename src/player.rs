@@ -69,4 +69,12 @@ impl Player {
             _ => return Err("Unknown action".into())
         }
     }
+
+    pub fn withdraw_balance(&mut self, amount: u32) -> Result<u32, &'static str> {
+        Ok((0))
+    }
+
+    pub fn deposit_balance(&mut self, amount: u32) -> Result<u32, &'static str> {
+        Ok((0))
+    }
 }

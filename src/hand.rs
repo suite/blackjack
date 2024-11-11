@@ -1,8 +1,23 @@
-use crate::card::Card;
+use std::fmt::{self, Display};
 
+use crate::{card::Card, game::Action};
+
+
+// TODO: make fields private, use ::new to create and init hands
 #[derive(Debug)]
 pub struct Hand {
-    pub cards: Vec<Card>
+    pub cards: Vec<Card>,
+    pub is_dealer: bool
+}
+
+impl Display for Hand {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut hand = String::new();
+        for card in &self.cards {
+            hand.push_str(&card.to_string()); // TODO: clean this up
+        }
+        write!(f, "{hand}")
+    }
 }
 
 
@@ -29,5 +44,24 @@ impl Hand {
         }
 
         (value, None)
+    }
+
+    pub fn get_action(&self) -> Action {
+        let hand_value = self.get_value();
+        let option_val = hand_value.1.unwrap_or(22);
+
+        if hand_value.0 > 21 && option_val > 21 {
+            return Action::Bust;
+        } else if (hand_value.0 >= 17 && hand_value.0 <= 21) || (option_val >= 17 && option_val <= 21) {
+            if self.is_dealer || hand_value.0 == 21 || option_val == 21 {
+                // TODO: add blackjack
+                if self.cards.len() == 2 && (hand_value.0 == 21 || option_val == 21) {
+                    // mark as blackjack or return blackjack?
+                }
+                return Action::Stand;
+            }
+        }
+
+        Action::DoNothing
     }
 }
