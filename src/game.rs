@@ -29,14 +29,14 @@ pub enum Turn {
 
 
 impl BlackJack {
-    pub fn new(player: Player) -> Result<Self, &'static str> {
+    pub fn new(mut player: Player) -> Result<Self, &'static str> {
         let bet_amount = player.request_bet_amount().expect("bad bet amount");
         let mut deck = card::card_utils::generate_blackjack_deck(6);
 
         // dealer starts with 1 card
         // player starts with two cards
-        let mut dealer_hand = Hand { cards: vec![], is_dealer: true };
-        let mut player_hands = vec![ Hand { cards: vec![], is_dealer: false }];
+        let mut dealer_hand = Hand { cards: vec![], is_dealer: true, bet_value: 0 };
+        let mut player_hands = vec![ Hand { cards: vec![], is_dealer: false, bet_value: bet_amount }];
         let mut init_player_hand =  player_hands.get_mut(0).unwrap();
 
         deck.hit(&mut dealer_hand);
@@ -45,8 +45,8 @@ impl BlackJack {
 
         // TODO: blackjack check
         
-        println!("Dealer shows {} value: {:?}", dealer_hand, dealer_hand.get_value());
-        println!("Player shows {} value: {:?}", player_hands.get(0).unwrap(), player_hands.get(0).unwrap().get_value());
+        println!("Dealer shows {} value: {:?}", dealer_hand, dealer_hand.value());
+        println!("Player shows {} value: {:?}", player_hands.get(0).unwrap(), player_hands.get(0).unwrap().value());
         
         Ok(BlackJack {
             player,
@@ -75,11 +75,8 @@ impl BlackJack {
         match action {
             Action::Hit => {
                 let next_action = {
-                    let curr_hand = self.player_hands
-                        .get_mut(self.current_hand_index)
-                        .unwrap();
+                    let curr_hand = &mut self.player_hands[self.current_hand_index];
                     self.deck.hit(curr_hand);
-
                     curr_hand.get_action()
                 };
                
@@ -89,21 +86,64 @@ impl BlackJack {
             Action::Split => {
                 // split cards (check balance)
                 match self.player.withdraw_balance(self.bet_amount) {
-                    Ok(_) => {},
-                    Err(_) => {}
+                    Ok(_) => {
+                        let curr_hand = &mut self.player_hands[self.current_hand_index];
+
+                        if !curr_hand.can_split() { 
+                            println!("Can't split");
+                            return;
+                        };
+
+                        let split_card = curr_hand.cards.pop().unwrap();
+                        self.player_hands.insert(self.current_hand_index+1, 
+                            Hand {
+                            cards: vec![split_card],
+                            is_dealer: false,
+                            bet_value: self.bet_amount
+                        });
+                    },
+                    Err(err) => {
+                        println!("Could not withdraw balance {err}");
+                        return;
+                    }
                 }
             },
             Action::Double => {
                 // double bet (check bet_amount and balance) => stand
                 // not available if split (not always true)
+     
                 match self.player.withdraw_balance(self.bet_amount) {
-                    Ok(_) => {},
-                    Err(_) => {}
+                    Ok(_) => {
+                        // only 1 card
+                        let curr_hand = &mut self.player_hands[self.current_hand_index];
+                        
+                        if curr_hand.cards.len() != 2 {
+                            println!("Can't double");
+                            return;
+                        }
+                        
+                        // needs to modify hand value
+                        curr_hand.bet_value = curr_hand.bet_value * 2;
+
+                        
+                        self.deck.hit(curr_hand);
+
+                        // TODO: COULD BUST - GET ACTIOn - start here
+                        
+                        self.take_player_action(Action::Stand);
+                    },
+                    Err(err) => {
+                        println!("Could not withdraw balance {err}");
+                        return;
+                    }
                 }
                 // hit one more time on deck, no more hits allowed
             },
             Action::Stand | Action::Bust => {
-                // Move to next hand if split, otherwise dealer show 
+                if let Action::Bust = action {
+                    self.player_hands[self.current_hand_index].bet_value = 0;
+                } 
+
                 if self.player_hands.len() == 1 || self.current_hand_index == self.player_hands.len()-1 {
                     self.turn = Turn::Dealer
                 } else {

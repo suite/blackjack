@@ -8,7 +8,8 @@ use crate::{card::Card, game::Action};
 #[derive(Debug)]
 pub struct Hand {
     pub cards: Vec<Card>,
-    pub is_dealer: bool
+    pub is_dealer: bool,
+    pub bet_value: u32,
 }
 
 impl Display for Hand {
@@ -23,7 +24,7 @@ impl Display for Hand {
 
 
 impl Hand {
-    pub fn get_value(&self) -> (u8, Option<u8>) {
+    pub fn value(&self) -> (u8, Option<u8>) {
         let mut value = 0;
         let mut option_val: Option<(u8 ,u8)> = None;
 
@@ -48,7 +49,7 @@ impl Hand {
     }
 
     pub fn get_action(&self) -> Action {
-        let hand_value = self.get_value();
+        let hand_value = self.value();
         let option_val = hand_value.1.unwrap_or(22);
 
         if hand_value.0 > 21 && option_val > 21 {
@@ -64,5 +65,9 @@ impl Hand {
         }
 
         Action::DoNothing
+    }
+
+    pub fn can_split(&self) -> bool {
+        self.cards.len() == 2 && self.cards[0].rank.value() == self.cards[1].rank.value()
     }
 }

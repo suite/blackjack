@@ -37,7 +37,7 @@ impl Player {
         })
     }
 
-    pub fn request_bet_amount(&self) -> Result<u32, Box<dyn Error>> {
+    pub fn request_bet_amount(&mut self) -> Result<u32, Box<dyn Error>> {
         let mut bet_amount = String::new();
 
         println!("How much do you want to put on this game? Balance: {}", self.balance);
@@ -46,9 +46,7 @@ impl Player {
         
         let bet_amount: u32 = bet_amount.trim().parse()?;
 
-        if bet_amount > self.balance {
-            return Err("Bet amount exceeds player balance".into());
-        }
+        self.withdraw_balance(bet_amount)?;
 
         Ok(bet_amount)
     }
@@ -70,11 +68,16 @@ impl Player {
         }
     }
 
+    // TODO: move some errors, Result<(), ()> -> no, better errors? custom err type
     pub fn withdraw_balance(&mut self, amount: u32) -> Result<u32, &'static str> {
-        Ok((0))
+        if amount > self.balance {
+            Err("Not enough money")
+        } else {
+            Ok(amount)
+        }
     }
 
-    pub fn deposit_balance(&mut self, amount: u32) -> Result<u32, &'static str> {
-        Ok((0))
+    pub fn deposit_balance(&mut self, amount: u32) {
+        self.balance += amount;
     }
 }

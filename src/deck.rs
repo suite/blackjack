@@ -16,6 +16,6 @@ impl Deck {
         hand.cards.push(self.take_card());
         let who = if hand.is_dealer { "Dealer" } else { "Player "};
         // TODO: Print players name?
-        println!("{} hit and got {} value {:?}", who, hand, hand.get_value());
+        println!("{} hit and got {} value {:?}", who, hand, hand.value());
     }
 }
