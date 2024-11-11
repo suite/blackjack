@@ -43,14 +43,20 @@ impl BlackJack {
         deck.hit(&mut init_player_hand);
         deck.hit(&mut init_player_hand);
 
+        let mut start_turn = Turn::Player;
         // TODO: blackjack check
+        if init_player_hand.is_blackjack() {
+            println!("Blackjack!");
+            init_player_hand.bet_value *= 2; // TODO
+            start_turn = Turn::Dealer;
+        }
         
         println!("Dealer shows {} value: {:?}", dealer_hand, dealer_hand.value());
         println!("Player shows {} value: {:?}", player_hands.get(0).unwrap(), player_hands.get(0).unwrap().value());
         
         Ok(BlackJack {
             player,
-            turn: Turn::Player,
+            turn: start_turn,
             bet_amount,
             deck,
             is_running: true,
@@ -79,6 +85,12 @@ impl BlackJack {
                 let next_action = curr_hand.get_action();
             
                 // blackjack test
+                // needs to modify hand value
+                if curr_hand.is_blackjack() {
+                        // blackjack
+                        println!("Blackjack!");
+                        curr_hand.bet_value *= 2; // TODO: this should be 1.5
+                }
                
                 // bust or 21, move to next hand
                 self.take_player_action(next_action);

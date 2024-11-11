@@ -56,10 +56,6 @@ impl Hand {
             return Action::Bust;
         } else if (hand_value.0 >= 17 && hand_value.0 <= 21) || (option_val >= 17 && option_val <= 21) {
             if self.is_dealer || hand_value.0 == 21 || option_val == 21 {
-                // TODO: add blackjack
-                if self.cards.len() == 2 && (hand_value.0 == 21 || option_val == 21) {
-                    // mark as blackjack or return blackjack?
-                }
                 return Action::Stand;
             }
         }
@@ -68,6 +64,12 @@ impl Hand {
     }
 
     pub fn can_split(&self) -> bool {
-        self.cards.len() == 2 && self.cards[0].rank.value() == self.cards[1].rank.value()
+        self.cards.len() == 2 
+            && self.cards[0].rank.value() == self.cards[1].rank.value()
+    }
+
+    pub fn is_blackjack(&self) -> bool {
+        self.cards.len() == 2 
+            && self.value().1.unwrap_or(0) == 21
     }
 }
