@@ -6,6 +6,7 @@ use blackjack::{game::BlackJack, player::Player};
 /*
 TODO:
 add some form of rust lint
+add tests
 */
 
 fn main() {
