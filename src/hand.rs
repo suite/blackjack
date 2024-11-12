@@ -56,7 +56,7 @@ impl Hand {
 
     pub fn take_card(&mut self) -> Option<Card> {
         let card = self.cards.pop();
-        self.value = self.value();
+        self.value = self.value(); // could just add? self.value = self.get_updated
         self.best_value = self.best_value(self.value);
         card
     }
