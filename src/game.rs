@@ -96,7 +96,6 @@ impl BlackJack {
                 self.take_player_action(next_action);
             },
             Action::Split => {
-                // split cards (check balance)
                 match self.player.withdraw_balance(self.bet_amount) {
                     Ok(_) => {
                         let curr_hand = &mut self.player_hands[self.current_hand_index];
@@ -148,7 +147,6 @@ impl BlackJack {
                 }
             },
             Action::Stand | Action::Bust => {
-                // TODO: dont necessarily need since calc_winnings check
                 if let Action::Bust = action {
                     self.player_hands[self.current_hand_index].bet_value = 0;
                 } 
@@ -182,7 +180,14 @@ impl BlackJack {
     fn finish(&mut self) {
         self.is_running = false;
 
-        let winnings = self.calculate_winnings();
+        let (winnings, pushed) = self.calculate_winnings();
+
+        self.player.deposit_balance(winnings + pushed);
+
+        if pushed > 0 {
+            println!("{pushed} given back from tied hands");
+        }
+
         if winnings > 0 {
             println!("Woo! You won {winnings}.")
         } else {
@@ -190,18 +195,20 @@ impl BlackJack {
         }
     }
 
-    fn calculate_winnings(&self) -> u32 {
-        // if dealer bust, add all hand bet_values 
-        // add all bet_values beating dealer.best_hand()
+    fn calculate_winnings(&self) -> (u32, u32) {
+        let mut winnings = 0;
+        let mut pushed = 0;
 
-        // need to handle push
+        let dealer_best = self.dealer_hand.best_value().unwrap_or(0);
+        for hand in &self.player_hands {
+            let player_best = hand.best_value().unwrap_or(0);
+            if player_best > dealer_best {
+                winnings += hand.bet_value * 2;
+            } else if player_best == dealer_best {
+                pushed += hand.bet_value
+            }
+        }
 
-        // doont use iter for now, return (winnings,pushed)
-
-        self.player_hands
-            .iter()
-            .filter(|hand| { 
-               hand.best_value().unwrap_or(0) > self.dealer_hand.best_value().unwrap_or(0)
-            }).map(|hand| hand.bet_value).sum()
+        (winnings, pushed)
     }
 }
