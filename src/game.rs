@@ -148,6 +148,7 @@ impl BlackJack {
                 }
             },
             Action::Stand | Action::Bust => {
+                // TODO: dont necessarily need since calc_winnings check
                 if let Action::Bust = action {
                     self.player_hands[self.current_hand_index].bet_value = 0;
                 } 
@@ -167,8 +168,7 @@ impl BlackJack {
 
         match self.dealer_hand.get_action() {
             Action::Bust | Action::Stand  => {
-                // TODO: implement final game check
-                self.is_running = false;
+                self.finish();
             },
             _ => {}
         }
@@ -178,9 +178,26 @@ impl BlackJack {
         return self.is_running;
     }
 
+    // TODO: do i rly need mut in all these places? .. prob
+    fn finish(&mut self) {
+        self.is_running = false;
+
+        let winnings = self.calculate_winnings();
+        if winnings > 0 {
+            println!("Woo! You won {winnings}.")
+        } else {
+            println!("Yikes, house took it this time.")
+        }
+    }
+
     fn calculate_winnings(&self) -> u32 {
         // if dealer bust, add all hand bet_values 
         // add all bet_values beating dealer.best_hand()
+
+        // need to handle push
+
+        // doont use iter for now, return (winnings,pushed)
+
         self.player_hands
             .iter()
             .filter(|hand| { 
