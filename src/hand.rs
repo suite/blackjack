@@ -24,6 +24,7 @@ impl Display for Hand {
 
 
 impl Hand {
+    // TODO: cache value?
     pub fn value(&self) -> (u8, Option<u8>) {
         let mut value = 0;
         let mut option_val: Option<(u8 ,u8)> = None;
@@ -48,16 +49,21 @@ impl Hand {
         (value, None)
     }   
 
+    // TODO: cache value?
     pub fn best_value(&self) -> Option<u8> {
         let (num1, num2) = self.value();
         let num2 = num2.unwrap_or(22);
-       
+
         if num1 > 21 && num2 > 21 {
             None
-        } else if num1 >= num2 && num1 <= 21 {
+        } else if num2 > 21 {
             Some(num1)
-        } else {
+        } else if num1 > 21 {
             Some(num2)
+        } else if num2 > num1 {
+            Some(num2)
+        } else {
+            Some(num1)
         }
     }
 
