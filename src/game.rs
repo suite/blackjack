@@ -177,4 +177,14 @@ impl BlackJack {
     pub fn is_running(&self) -> bool{
         return self.is_running;
     }
+
+    fn calculate_winnings(&self) -> u32 {
+        // if dealer bust, add all hand bet_values 
+        // add all bet_values beating dealer.best_hand()
+        self.player_hands
+            .iter()
+            .filter(|hand| { 
+               hand.best_value().unwrap_or(0) > self.dealer_hand.best_value().unwrap_or(0)
+            }).map(|hand| hand.bet_value).sum()
+    }
 }

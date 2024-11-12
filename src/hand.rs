@@ -46,16 +46,29 @@ impl Hand {
         }
 
         (value, None)
+    }   
+
+    pub fn best_value(&self) -> Option<u8> {
+        let (num1, num2) = self.value();
+        let num2 = num2.unwrap_or(22);
+       
+        if num1 > 21 && num2 > 21 {
+            None
+        } else if num1 >= num2 && num1 <= 21 {
+            Some(num1)
+        } else {
+            Some(num2)
+        }
     }
 
     pub fn get_action(&self) -> Action {
-        let hand_value = self.value();
-        let option_val = hand_value.1.unwrap_or(22);
+        let (num1, num2) = self.value();
+        let num2 = num2.unwrap_or(22);
 
-        if hand_value.0 > 21 && option_val > 21 {
+        if num1 > 21 && num2 > 21 {
             return Action::Bust;
-        } else if (hand_value.0 >= 17 && hand_value.0 <= 21) || (option_val >= 17 && option_val <= 21) {
-            if self.is_dealer || hand_value.0 == 21 || option_val == 21 {
+        } else if (num1 >= 17 && num1 <= 21) || (num2 >= 17 && num2 <= 21) {
+            if self.is_dealer || num1 == 21 || num2 == 21 {
                 return Action::Stand;
             }
         }
