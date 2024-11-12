@@ -5,17 +5,10 @@ pub struct Deck {
 }
 
 impl Deck {
-    fn take_card(&mut self) -> Card {
+    pub fn take_card(&mut self) -> Card {
         match self.cards.pop() {
             Some(card) => card,
             None => todo!("Handle out of cards")
         }
-    }
-
-    pub fn hit(&mut self, hand: &mut Hand) {
-        hand.cards.push(self.take_card());
-        let who = if hand.is_dealer { "Dealer" } else { "Player "};
-        // TODO: Print players name?
-        println!("{} hit and got {} value {:?}", who, hand, hand.value());
     }
 }

@@ -1,10 +1,12 @@
-use crate::{card, deck::Deck, hand::Hand, player::Player};
+use std::{cell::RefCell, rc::Rc};
+
+use crate::{card, deck::Deck, hand::{BetValueUpdate, Hand}, player::Player};
 
 pub struct BlackJack {
     player: Player,
     turn: Turn,
     bet_amount: u32,
-    deck: Deck,
+    deck: Rc<RefCell<Deck>>,
     is_running: bool,
 
     current_hand_index: usize, // TODO: move to ref?
@@ -22,37 +24,42 @@ pub enum Action {
     DoNothing // prob better way to handle
 }
 
-pub enum Turn {
+enum Turn {
     Player,
     Dealer
 }
 
-
 impl BlackJack {
     pub fn new(mut player: Player) -> Result<Self, &'static str> {
         let bet_amount = player.request_bet_amount().expect("bad bet amount");
-        let mut deck = card::card_utils::generate_blackjack_deck(6);
+        let deck =  card::card_utils::generate_blackjack_deck(6);
+        let deck = Rc::new(RefCell::new(deck));
 
-        // dealer starts with 1 card
-        // player starts with two cards
-        let mut dealer_hand = Hand { cards: vec![], is_dealer: true, bet_value: 0 };
-        let mut player_hands = vec![ Hand { cards: vec![], is_dealer: false, bet_value: bet_amount }];
-        let mut init_player_hand =  player_hands.get_mut(0).unwrap();
+        let mut dealer_hand = Hand::new(
+                true, 
+                None, 
+                Rc::clone(&deck), 
+                None);
+        let mut player_hand = Hand::new(
+                false, 
+                Some(bet_amount), 
+                Rc::clone(&deck), 
+                None);
 
-        deck.hit(&mut dealer_hand);
-        deck.hit(&mut init_player_hand);
-        deck.hit(&mut init_player_hand);
+        dealer_hand.hit();
+        player_hand.hit();
+        player_hand.hit();
 
         let mut start_turn = Turn::Player;
-        // TODO: blackjack check
-        if init_player_hand.is_blackjack() {
+        if player_hand.is_blackjack() {
             println!("Blackjack!");
-            init_player_hand.bet_value *= 2; // TODO
+
+            player_hand.update_bet_value(BetValueUpdate::Blackjack);
             start_turn = Turn::Dealer;
         }
         
-        println!("Dealer shows {} value: {:?}", dealer_hand, dealer_hand.value());
-        println!("Player shows {} value: {:?}", player_hands.get(0).unwrap(), player_hands.get(0).unwrap().value());
+        println!("Dealer shows {} value: {:?}", dealer_hand, dealer_hand.get_value());
+        println!("Player shows {} value: {:?}", player_hand, player_hand.get_value());
         
         Ok(BlackJack {
             player,
@@ -61,7 +68,7 @@ impl BlackJack {
             deck,
             is_running: true,
             current_hand_index: 0,
-            player_hands,
+            player_hands: vec![player_hand],
             dealer_hand,
         })
     }
@@ -81,15 +88,12 @@ impl BlackJack {
         match action {
             Action::Hit => {
                 let curr_hand = &mut self.player_hands[self.current_hand_index];
-                self.deck.hit(curr_hand);
+                curr_hand.hit();
                 let next_action = curr_hand.get_action();
             
-                // blackjack test
-                // needs to modify hand value
                 if curr_hand.is_blackjack() {
-                        // blackjack
-                        println!("Blackjack!");
-                        curr_hand.bet_value *= 2; // TODO: this should be 1.5
+                    println!("Blackjack!");
+                    curr_hand.update_bet_value(BetValueUpdate::Blackjack);
                 }
                
                 // bust or 21, move to next hand
@@ -105,13 +109,14 @@ impl BlackJack {
                             return;
                         };
 
-                        let split_card = curr_hand.cards.pop().unwrap();
+                        let split_card = curr_hand.take_card().unwrap();
                         self.player_hands.insert(self.current_hand_index+1, 
-                            Hand {
-                            cards: vec![split_card],
-                            is_dealer: false,
-                            bet_value: self.bet_amount
-                        });
+                            Hand::new(
+                                false, 
+                                Some(self.bet_amount), 
+                                Rc::clone(&self.deck),
+                                Some(split_card)
+                            ));
                     },
                     Err(err) => {
                         println!("Could not withdraw balance {err}");
@@ -124,14 +129,14 @@ impl BlackJack {
                     Ok(_) => {
                         let curr_hand = &mut self.player_hands[self.current_hand_index];
                         
-                        if curr_hand.cards.len() != 2 {
+                        if !curr_hand.can_double() {
                             println!("Can't double");
                             return;
                         }
                         
                         // needs to modify hand value
-                        curr_hand.bet_value = curr_hand.bet_value * 2;
-                        self.deck.hit(curr_hand);
+                        curr_hand.hit();
+                        curr_hand.update_bet_value(BetValueUpdate::Double);
 
                         let next_action = match curr_hand.get_action() {
                             Action::Bust => Action::Bust,
@@ -148,7 +153,8 @@ impl BlackJack {
             },
             Action::Stand | Action::Bust => {
                 if let Action::Bust = action {
-                    self.player_hands[self.current_hand_index].bet_value = 0;
+                    self.player_hands[self.current_hand_index]
+                        .update_bet_value(BetValueUpdate::Bust);
                 } 
 
                 if self.player_hands.len() == 1 || self.current_hand_index == self.player_hands.len()-1 {
@@ -162,7 +168,7 @@ impl BlackJack {
     }
 
     fn take_dealer_action(&mut self) {
-        self.deck.hit(&mut self.dealer_hand);
+        self.dealer_hand.hit();
 
         match self.dealer_hand.get_action() {
             Action::Bust | Action::Stand  => {
@@ -180,35 +186,34 @@ impl BlackJack {
     fn finish(&mut self) {
         self.is_running = false;
 
-        let (winnings, pushed) = self.calculate_winnings();
+        let (won, push, lost) = self.calculate_winnings();
 
-        self.player.deposit_balance(winnings + pushed);
+        self.player.deposit_balance(won + push);
 
-        if pushed > 0 {
-            println!("{pushed} given back from tied hands");
-        }
-
-        if winnings > 0 {
-            println!("Woo! You won {winnings}.")
-        } else {
-            println!("Yikes, house took it this time.")
-        }
+        println!("Won: {won} Push: {push} Lost: {lost}");
     }
 
-    fn calculate_winnings(&self) -> (u32, u32) {
-        let mut winnings = 0;
-        let mut pushed = 0;
+    fn calculate_winnings(&self) -> (u32, u32, u32) {
+        let mut won = 0;
+        let mut push = 0;
+        let mut lost = 0;
 
-        let dealer_best = self.dealer_hand.best_value().unwrap_or(0);
+        let dealer_best = self.dealer_hand.get_best_value().unwrap_or(0);
         for hand in &self.player_hands {
-            let player_best = hand.best_value().unwrap_or(0);
+            let player_best = hand.get_best_value().unwrap_or(0);
+            let bet_value = hand.get_bet_value();
             if player_best > dealer_best {
-                winnings += hand.bet_value * 2;
+                won += bet_value * 2;
             } else if player_best == dealer_best {
-                pushed += hand.bet_value
+                if bet_value > 0 {
+                    push += bet_value
+                } else {
+                    // lost += bet_value.abs(); TODO: negative
+                    lost = 21;
+                }     
             }
         }
 
-        (winnings, pushed)
+        (won, push, lost)
     }
 }

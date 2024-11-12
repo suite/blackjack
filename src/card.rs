@@ -65,6 +65,7 @@ impl Card {
     }
 }
 
+// TODO: move to deck?
 pub mod card_utils {
     use rand::{seq::SliceRandom, thread_rng};
 
