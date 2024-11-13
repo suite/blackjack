@@ -159,7 +159,7 @@ impl BlackJack {
                         .update_bet_value(BetValueUpdate::Bust);
                 } 
 
-                if self.player_hands.len() == 1 || self.current_hand_index == self.player_hands.len()-1 {
+                if self.current_hand_index == self.player_hands.len()-1 {
                     self.turn = Turn::Dealer
                 } else {
                     self.current_hand_index += 1;
