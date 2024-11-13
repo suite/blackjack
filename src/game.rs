@@ -36,13 +36,11 @@ impl BlackJack {
         let mut dealer_hand = Hand::new(
                 true, 
                 0.0, 
-                Rc::clone(&deck), 
-                None);
+                Rc::clone(&deck));
         let mut player_hand = Hand::new(
                 false, 
                 bet_amount, 
-                Rc::clone(&deck), 
-                None);
+                Rc::clone(&deck));
 
         dealer_hand.hit();
         player_hand.hit();
@@ -82,7 +80,6 @@ impl BlackJack {
     }
 
     fn take_player_action(&mut self, action: Action) {
-        println!("Taking action {action:?}");
         match action {
             Action::Hit => {
                 let curr_hand = &mut self.player_hands[self.current_hand_index];
@@ -110,13 +107,14 @@ impl BlackJack {
                         };
 
                         let split_card = curr_hand.take_card().unwrap();
-                        self.player_hands.insert(self.current_hand_index+1, 
-                            Hand::new(
-                                false, 
-                                self.bet_amount, 
-                                Rc::clone(&self.deck),
-                                Some(split_card)
-                            ));
+                        let mut new_hand = Hand::new(
+                            false, 
+                            self.bet_amount, 
+                            Rc::clone(&self.deck),
+                        );
+
+                        new_hand.push_card(split_card);
+                        self.player_hands.insert(self.current_hand_index+1, new_hand);
                     },
                     Err(err) => {
                         println!("Could not withdraw balance {err}");
@@ -184,7 +182,6 @@ impl BlackJack {
         return self.is_running;
     }
 
-    // TODO: do i rly need mut in all these places? .. prob
     fn finish(&mut self) {
         self.is_running = false;
 

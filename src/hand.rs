@@ -30,13 +30,9 @@ impl Display for Hand {
 
 
 impl Hand {
-   pub fn new(is_dealer: bool, bet_value: f32, deck: Rc<RefCell<Deck>>, split_card: Option<Card>) -> Self {
-        let mut cards = vec![];
-        if let Some(card) = split_card {
-            cards.push(card);
-        }
+   pub fn new(is_dealer: bool, bet_value: f32, deck: Rc<RefCell<Deck>>) -> Self {
         Hand {
-            cards,
+            cards: vec![],
             is_dealer,
             bet_value,
             value: (0, 0),
@@ -61,6 +57,11 @@ impl Hand {
         }
         
         card
+    }
+
+    pub fn push_card(&mut self, card: Card) {
+        self.update_values(&card, true);
+        self.cards.push(card);
     }
 
     fn update_values(&mut self, card: &Card, should_add: bool) {
