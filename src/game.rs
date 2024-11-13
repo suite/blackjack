@@ -5,7 +5,7 @@ use crate::{card, deck::Deck, hand::{BetValueUpdate, Hand}, player::Player};
 pub struct BlackJack {
     player: Player,
     turn: Turn,
-    bet_amount: u32,
+    bet_amount: f32,
     deck: Rc<RefCell<Deck>>,
     is_running: bool,
 
@@ -37,12 +37,12 @@ impl BlackJack {
 
         let mut dealer_hand = Hand::new(
                 true, 
-                None, 
+                0.0, 
                 Rc::clone(&deck), 
                 None);
         let mut player_hand = Hand::new(
                 false, 
-                Some(bet_amount), 
+                bet_amount, 
                 Rc::clone(&deck), 
                 None);
 
@@ -115,7 +115,7 @@ impl BlackJack {
                         self.player_hands.insert(self.current_hand_index+1, 
                             Hand::new(
                                 false, 
-                                Some(self.bet_amount), 
+                                self.bet_amount, 
                                 Rc::clone(&self.deck),
                                 Some(split_card)
                             ));
@@ -197,29 +197,26 @@ impl BlackJack {
         println!("Won: {won} Push: {push} Lost: {lost}");
     }
 
-    fn calculate_winnings(&self) -> (u32, u32, u32) {
-        let mut won = 0;
-        let mut push = 0;
-        let mut lost = 0;
+    fn calculate_winnings(&self) -> (f32, f32, f32) {
+        let mut won: f32 = 0.0;
+        let mut push: f32 = 0.0;
+        let mut lost: f32 = 0.0;
 
         let dealer_best = self.dealer_hand.best_value();
         for hand in &self.player_hands {
             let player_best = hand.best_value();
             let bet_value = hand.bet_value();
             if player_best > dealer_best {
-                won += bet_value * 2;
+                won += bet_value * 2.0;
             } else if player_best == dealer_best {
-                // 0 == 0
-                // 17 == 17
-                if bet_value > 0 {
+                if bet_value.is_sign_positive() {
                     push += bet_value
                 } else {
-                    // lost += bet_value.abs(); TODO: negative
-                    lost = 21;
+                    lost += bet_value;
                 }     
             } else {
                 // lost
-                lost = 21;
+                lost += bet_value;
             }
         }
 

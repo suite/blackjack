@@ -8,7 +8,7 @@ use crate::{card::{self, Card}, deck::Deck, game::{Action, BlackJack}};
 pub struct Hand {
     cards: Vec<Card>,
     is_dealer: bool,
-    bet_value: u32,
+    bet_value: f32,
     value: (u8, u8),
     best_value: u8,
     deck: Rc<RefCell<Deck>>
@@ -32,7 +32,7 @@ impl Display for Hand {
 
 
 impl Hand {
-   pub fn new(is_dealer: bool, bet_amount: Option<u32>, deck: Rc<RefCell<Deck>>, split_card: Option<Card>) -> Self {
+   pub fn new(is_dealer: bool, bet_value: f32, deck: Rc<RefCell<Deck>>, split_card: Option<Card>) -> Self {
         let mut cards = vec![];
         if let Some(card) = split_card {
             cards.push(card);
@@ -40,7 +40,7 @@ impl Hand {
         Hand {
             cards,
             is_dealer,
-            bet_value: bet_amount.unwrap_or(0),
+            bet_value,
             value: (0, 0),
             best_value: 0,
             deck
@@ -90,13 +90,13 @@ impl Hand {
 
     pub fn update_bet_value(&mut self, update: BetValueUpdate) {
         match update {
-            BetValueUpdate::Blackjack => self.bet_value *= 2,
-            BetValueUpdate::Double => self.bet_value *= 2, // TODO: set to 1.6
-            BetValueUpdate::Bust => self.bet_value *= 0, // TODO: set to -1
+            BetValueUpdate::Blackjack => self.bet_value *= 2.0,
+            BetValueUpdate::Double => self.bet_value *= 1.5,
+            BetValueUpdate::Bust => self.bet_value *= -1.0,
         }
     }
 
-    pub fn bet_value(&self) -> u32 {
+    pub fn bet_value(&self) -> f32 {
         self.bet_value
     }
 

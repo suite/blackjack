@@ -4,7 +4,7 @@ use crate::game::Action;
 
 pub struct Player {
     name: String,
-    balance: u32,
+    balance: f32,
 }
 
 impl Player {
@@ -24,10 +24,14 @@ impl Player {
             .read_line(&mut balance)
             .expect("Failed to read balance");
 
-        let balance: u32 = match balance.trim().parse() {
+        let balance: f32 = match balance.trim().parse() {
             Ok(num) => num,
             Err(_) => return Err("Failed to parse balance")
         };
+
+        if balance.is_sign_negative() {
+            return Err("Cannot have negative balance"); 
+        }
 
         println!("Player: {name} Balance: {balance}");
 
@@ -37,14 +41,18 @@ impl Player {
         })
     }
 
-    pub fn request_bet_amount(&mut self) -> Result<u32, Box<dyn Error>> {
+    pub fn request_bet_amount(&mut self) -> Result<f32, Box<dyn Error>> {
         let mut bet_amount = String::new();
 
         println!("How much do you want to put on this game? Balance: {}", self.balance);
         io::stdin()
             .read_line(&mut bet_amount)?;
         
-        let bet_amount: u32 = bet_amount.trim().parse()?;
+        let bet_amount: f32 = bet_amount.trim().parse()?;
+
+        if bet_amount.is_sign_negative() {
+            return Err("Cannot have negative bet amount".into()); 
+        }
 
         self.withdraw_balance(bet_amount)?;
 
@@ -69,7 +77,7 @@ impl Player {
     }
 
     // TODO: move some errors, Result<(), ()> -> no, better errors? custom err type
-    pub fn withdraw_balance(&mut self, amount: u32) -> Result<u32, &'static str> {
+    pub fn withdraw_balance(&mut self, amount: f32) -> Result<f32, &'static str> {
         if amount > self.balance {
             Err("Not enough money")
         } else {
@@ -78,7 +86,7 @@ impl Player {
         }
     }
 
-    pub fn deposit_balance(&mut self, amount: u32) {
+    pub fn deposit_balance(&mut self, amount: f32) {
         self.balance += amount;
     }
 }
