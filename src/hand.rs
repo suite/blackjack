@@ -9,8 +9,8 @@ pub struct Hand {
     cards: Vec<Card>,
     is_dealer: bool,
     bet_value: u32,
-    value: (u8, Option<u8>),
-    best_value: Option<u8>,
+    value: (u8, u8),
+    best_value: u8,
     deck: Rc<RefCell<Deck>>
 }
 
@@ -41,24 +41,51 @@ impl Hand {
             cards,
             is_dealer,
             bet_value: bet_amount.unwrap_or(0),
-            value: (0, None),
-            best_value: None,
+            value: (0, 0),
+            best_value: 0,
             deck
         }
     }
 
     pub fn hit(&mut self) {
         let card = self.deck.borrow_mut().take_card();
+        
+        self.update_values(&card, true);
+        
         self.cards.push(card);
-        self.value = self.value();
-        self.best_value = self.best_value(self.value);
     }
 
     pub fn take_card(&mut self) -> Option<Card> {
         let card = self.cards.pop();
-        self.value = self.value(); // could just add? self.value = self.get_updated
-        self.best_value = self.best_value(self.value);
+
+        if let Some(ref card) = card {
+            self.update_values(card, false);
+        }
+        
         card
+    }
+
+    fn update_values(&mut self, card: &Card, should_add: bool) {
+        if should_add {
+            self.value.0 += card.rank.value().0;
+            self.value.1 += card.rank.value().1.unwrap_or(card.rank.value().0);    
+        } else {
+            self.value.0 -= card.rank.value().0;
+            self.value.1 -= card.rank.value().1.unwrap_or(card.rank.value().0);
+        }
+
+        if self.value.0 > 21 && self.value.1 > 21 {
+            self.best_value = 0;
+            return;
+        }
+        
+        if self.value.0 <= 21 {
+            self.best_value = self.value.0;
+        }
+
+        if self.value.1 <= 21 && self.value.1 > self.best_value {
+            self.best_value = self.value.1;
+        }
     }
 
     pub fn update_bet_value(&mut self, update: BetValueUpdate) {
@@ -69,62 +96,20 @@ impl Hand {
         }
     }
 
-    pub fn get_bet_value(&self) -> u32 {
+    pub fn bet_value(&self) -> u32 {
         self.bet_value
     }
-    
-    fn value(&self) -> (u8, Option<u8>) {
-        let mut value = 0;
-        let mut option_val: Option<(u8 ,u8)> = None;
 
-        for card in &self.cards {
-            let (num1, num2) = card.rank.value();
-            match num2 {
-                Some(num2) => {
-                    match option_val {
-                        Some((prev1, prev2)) => option_val = Some((prev1+num1, prev2+num2)),
-                        None => option_val = Some((num1, num2))
-                    }
-                },
-                None => value += num1
-            }
-        }
-
-        if let Some((num1, num2)) = option_val {
-            return (value+num1, Some(value+num2));  
-        }
-
-        (value, None)
-    }
-
-    pub fn get_value(&self) -> (u8, Option<u8>) {
+    pub fn value(&self) -> (u8, u8) {
         self.value
     }
 
-    fn best_value(&self, value: (u8, Option<u8>) ) -> Option<u8> {
-        let (num1, num2) = value;
-        let num2 = num2.unwrap_or(22);
-
-        if num1 > 21 && num2 > 21 {
-            None
-        } else if num2 > 21 {
-            Some(num1)
-        } else if num1 > 21 {
-            Some(num2)
-        } else if num2 > num1 {
-            Some(num2)
-        } else {
-            Some(num1)
-        }
-    }
-
-    pub fn get_best_value(&self) -> Option<u8> {
+    pub fn best_value(&self) -> u8 {
         self.best_value
     }
 
     pub fn get_action(&self) -> Action {
         let (num1, num2) = self.value;
-        let num2 = num2.unwrap_or(22);
 
         if num1 > 21 && num2 > 21 {
             return Action::Bust;
@@ -148,6 +133,6 @@ impl Hand {
 
     pub fn is_blackjack(&self) -> bool {
         self.cards.len() == 2 
-            && self.value.1.unwrap_or(0) == 21
+            && self.value.1 == 21
     }
 }

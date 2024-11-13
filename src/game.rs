@@ -58,8 +58,8 @@ impl BlackJack {
             start_turn = Turn::Dealer;
         }
         
-        println!("Dealer shows {} value: {:?}", dealer_hand, dealer_hand.get_value());
-        println!("Player shows {} value: {:?}", player_hand, player_hand.get_value());
+        println!("Dealer shows {} value: {:?}", dealer_hand, dealer_hand.value());
+        println!("Player shows {} value: {:?}", player_hand, player_hand.value());
         
         Ok(BlackJack {
             player,
@@ -91,11 +91,13 @@ impl BlackJack {
                 curr_hand.hit();
                 let next_action = curr_hand.get_action();
             
+                println!("Player hit: {} value: {:?}", curr_hand, curr_hand.value());
+               
                 if curr_hand.is_blackjack() {
                     println!("Blackjack!");
                     curr_hand.update_bet_value(BetValueUpdate::Blackjack);
                 }
-               
+
                 // bust or 21, move to next hand
                 self.take_player_action(next_action);
             },
@@ -170,6 +172,8 @@ impl BlackJack {
     fn take_dealer_action(&mut self) {
         self.dealer_hand.hit();
 
+        println!("Dealer hit: {} value: {:?}", self.dealer_hand, self.dealer_hand.value());
+
         match self.dealer_hand.get_action() {
             Action::Bust | Action::Stand  => {
                 self.finish();
@@ -198,19 +202,24 @@ impl BlackJack {
         let mut push = 0;
         let mut lost = 0;
 
-        let dealer_best = self.dealer_hand.get_best_value().unwrap_or(0);
+        let dealer_best = self.dealer_hand.best_value();
         for hand in &self.player_hands {
-            let player_best = hand.get_best_value().unwrap_or(0);
-            let bet_value = hand.get_bet_value();
+            let player_best = hand.best_value();
+            let bet_value = hand.bet_value();
             if player_best > dealer_best {
                 won += bet_value * 2;
             } else if player_best == dealer_best {
+                // 0 == 0
+                // 17 == 17
                 if bet_value > 0 {
                     push += bet_value
                 } else {
                     // lost += bet_value.abs(); TODO: negative
                     lost = 21;
                 }     
+            } else {
+                // lost
+                lost = 21;
             }
         }
 
