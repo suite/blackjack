@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{card, deck::Deck, hand::{BetValueUpdate, Hand}, player::Player};
+use crate::{deck::Deck, hand::{BetValueUpdate, Hand}, player::Player};
 
 pub struct BlackJack {
     player: Player,
@@ -8,8 +8,7 @@ pub struct BlackJack {
     bet_amount: f32,
     deck: Rc<RefCell<Deck>>,
     is_running: bool,
-
-    current_hand_index: usize, // TODO: move to ref?
+    current_hand_index: usize,
     player_hands: Vec<Hand>, 
     dealer_hand: Hand
 }
@@ -32,8 +31,7 @@ enum Turn {
 impl BlackJack {
     pub fn new(mut player: Player) -> Result<Self, &'static str> {
         let bet_amount = player.request_bet_amount().expect("bad bet amount");
-        let deck =  card::card_utils::generate_blackjack_deck(6);
-        let deck = Rc::new(RefCell::new(deck));
+        let deck = Rc::new(RefCell::new(Deck::new(6)));
 
         let mut dealer_hand = Hand::new(
                 true, 

@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, Copy)]
-enum Suite {
+pub enum Suite {
     Heart,
     Diamond,
     Club,
@@ -7,7 +7,7 @@ enum Suite {
 }
 
 impl Suite {
-    fn iterator() -> impl Iterator<Item = Self> {
+    pub fn iterator() -> impl Iterator<Item = Self> {
         [Suite::Heart, Suite::Diamond, Suite::Club, Suite::Spade].iter().copied()
     }
 }
@@ -30,7 +30,7 @@ pub enum Rank {
 }
 
 impl Rank {
-    fn iterator() -> impl Iterator<Item = Self> {
+    pub fn iterator() -> impl Iterator<Item = Self> {
         [Rank::Two, Rank::Three, Rank::Four, Rank::Five, Rank::Six, Rank::Seven, Rank::Eight, Rank::Nine, Rank::Ten, Rank::Jack, Rank::Queen, Rank::King, Rank::Ace].iter().copied()
     }
 
@@ -56,7 +56,7 @@ impl Rank {
 #[derive(Debug)]
 pub struct Card {
     pub rank: Rank,
-    suite: Suite,
+    pub suite: Suite,
 }
 
 impl Card {
@@ -64,45 +64,3 @@ impl Card {
         format!("{:?} of {:?},", self.rank, self.suite) // TODO: need better format
     }
 }
-
-// TODO: move to deck?
-pub mod card_utils {
-    use rand::{seq::SliceRandom, thread_rng};
-
-    use crate::deck::Deck;
-
-    use super::{Card, Suite, Rank};
-    
-    fn generate_deck() -> Deck {
-        let mut cards = Vec::new();
-        
-        for rank in Rank::iterator() {
-            for suite in Suite::iterator() {
-                cards.push(Card {
-                    rank,
-                    suite
-                });
-            }
-        }
-
-        Deck {
-            cards
-        }
-    }
-
-    pub fn generate_blackjack_deck(num_decks: u32) -> Deck {
-        let mut cards = Vec::new();
-
-        for _ in 0..num_decks {
-            cards.append(&mut generate_deck().cards);
-        }
-
-        cards.shuffle(&mut thread_rng()); 
-
-        Deck {
-            cards
-        }
-    }
-}
-
-

@@ -3,21 +3,12 @@ use std::{error::Error, io};
 use crate::game::Action;
 
 pub struct Player {
-    name: String,
     balance: f32,
 }
 
 impl Player {
     pub fn new() -> Result<Player, &'static str> {
-        let mut name = String::new();
         let mut balance = String::new();
-
-        println!("Enter your player name:");
-        io::stdin()
-            .read_line(&mut name)
-            .expect("Failed to read player name");
-
-        let name = name.trim().to_string();
 
         println!("How much money you got?");
         io::stdin()
@@ -33,12 +24,9 @@ impl Player {
             return Err("Cannot have negative balance"); 
         }
 
-        println!("Player: {name} Balance: {balance}");
+        println!("Balance: {balance}");
 
-        Ok(Player {
-            name,
-            balance
-        })
+        Ok(Player { balance })
     }
 
     pub fn request_bet_amount(&mut self) -> Result<f32, Box<dyn Error>> {

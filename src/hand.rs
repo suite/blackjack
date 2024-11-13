@@ -1,10 +1,8 @@
 use std::{cell::RefCell, fmt::Display, rc::Rc};
 
-use crate::{card::{self, Card}, deck::Deck, game::{Action, BlackJack}};
+use crate::{card::Card, deck::Deck, game::Action};
 
 
-// TODO: make fields private, use ::new to create and init hands
-// reduce number of pub struct -> pub field
 pub struct Hand {
     cards: Vec<Card>,
     is_dealer: bool,
